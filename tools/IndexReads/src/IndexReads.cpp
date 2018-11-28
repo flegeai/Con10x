@@ -18,32 +18,30 @@ int main (int argc, char* argv[])
 
     static const char* STR_BANK1 = "-one";
     static const char* STR_BANK2 = "-two";
-    static const char* BARCODE = "-barcode";
+    static const char* OUT_BANK = "-out";
 
     OptionsParser parser ("TwoBanks");
 
     parser.push_back (new OptionOneParam (STR_BANK1, "bank one",   true));
     parser.push_back (new OptionOneParam (STR_BANK2, "bank two",   true));
-    parser.push_back (new OptionOneParam (BARCODE, "barcode",   true));
+    parser.push_back (new OptionOneParam (OUT_BANK, "output bank (interleaved)",   true));
     try
     {
         IProperties* options = parser.parse (argc, argv);
         // We open the two banks
         IBank* bank1 = Bank::open (options->getStr(STR_BANK1));  LOCAL (bank1);
         IBank* bank2 = Bank::open (options->getStr(STR_BANK2));  LOCAL (bank2);
-        string barcode = options->getStr(BARCODE);
+        ofstream output_bank (options->getStr(OUT_BANK));
 
         // We iterate the two banks. Note how we provide two iterators from the two banks.
         PairedIterator<Sequence> *  itPair  = new  PairedIterator<Sequence> (bank1->iterator(), bank2->iterator());
-                LOCAL(itPair);
-                ProgressIterator< std::pair <Sequence, Sequence>> progress_iter (itPair, "", bank1->estimateNbItems());
-
-        ofstream barcodemap_file ("barcode_reads.map");
+        LOCAL(itPair);
+        ProgressIterator< std::pair <Sequence, Sequence>> progress_iter (itPair, "", bank1->estimateNbItems());
 
         /* Map creation */
         //std::map<std::string, Fragment_map>> barcode_map;
         //std::map<std::string,std::list<streampos>> barcode_map;
-        std::map<std::string,std::list<long>> barcode_map;
+        std::map<std::string,std::list<long long>> barcode_map;
 
         for (progress_iter.first(); !progress_iter.isDone(); progress_iter.next())
         {
@@ -51,34 +49,25 @@ int main (int argc, char* argv[])
             Sequence& s2 = itPair->item().second;
             //std::cout << " avant : " << s1.toString() << endl;
             Fragment10x f(s1,s2);
-            /* std::cout << " barcode: " << f.barcode << endl;
-            std::cout << "r1: " << f.r1.toString() << endl;
-            std::cout << "r2: " << f.r2.toString() << endl;
-            */
-            barcode_map[f.barcode].push_back((long) barcodemap_file.tellp());
-            //barcode_map[f.barcode].add((long)barcodemap_file.tellp());
-            barcodemap_file << f.barcode + " " + f.r1.toString() + " " + f.r2.toString() << endl;
+
+            barcode_map[f.barcode].push_back((long long) output_bank.tellp());
+            output_bank << '@'+f.r1.getComment()  << endl;
+            output_bank << f.r1.toString()  << endl;
+            output_bank << '+'  << endl;
+            output_bank << f.r1.getQuality() << endl;
+            output_bank << '@'+f.r2.getComment()  << endl;
+            output_bank << f.r2.toString()  << endl;
+            output_bank << '+'  << endl;
+            output_bank << f.r2.getQuality() << endl;
         }
 
         // register the map with boost
-        ofstream barcodemap_index ("barcode_reads.idx");
+        std::string index = options->getStr(OUT_BANK);
+        ofstream barcodemap_index (index+".idx");
         boost::archive::binary_oarchive oarch(barcodemap_index);
         oarch << barcode_map;
-
-        barcodemap_file.close();
+        output_bank.close();
         barcodemap_index.close();
-
-        ifstream  barcodemap_file_r ("barcode_reads.map");
-        std::list<long>::iterator it;
-
-        for (it = barcode_map[barcode].begin(); it != barcode_map[barcode].end(); ++it) {
-          barcodemap_file_r.seekg((streampos) *it);
-          //long pos = (long long) *it;
-          //cout << pos << endl;
-          string pair;
-          std::getline(barcodemap_file_r,pair);
-          cout << pair<< endl;
-        }
       }
     catch (OptionFailure& e)
     {

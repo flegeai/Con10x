@@ -16,45 +16,38 @@
 int main (int argc, char* argv[])
 {
 
-    static const char* IDX = "-idx";
-    static const char* MAP = "-map";
+    static const char* READS = "-reads";
     static const char* BARCODE = "-barcode";
 
     OptionsParser parser ("getReads");
 
-    parser.push_back (new OptionOneParam (IDX, "file of reads indexed by barcode",   true));
-    parser.push_back (new OptionOneParam (MAP, "reads map",   true));
+    parser.push_back (new OptionOneParam (READS, "file of indexed reads",   true));
     parser.push_back (new OptionOneParam (BARCODE, "barcode",   true));
     try
     {
         IProperties* options = parser.parse (argc, argv);
-        string idx_file = options->getStr(IDX);
-        string map_file = options->getStr(MAP);
+        string reads_file = options->getStr(READS);
         string barcode = options->getStr(BARCODE);
 
-        std::ifstream barcodemap_file ("barcode_reads.map");
-        std::ifstream barcodemap_index(idx_file, std::ios::binary);
-        //std::ifstream barcodemap_index idx_file);
+        std::ifstream barcodemap_index(reads_file + ".idx", std::ios::binary);
 
-        std::map<std::string,std::list<long>>  barcode_map;
+        std::map<std::string,std::list<long long>>  barcode_map;
         boost::archive::binary_iarchive iarch(barcodemap_index);
         iarch & barcode_map;
 
         // register the map with boost
 
-
-        ifstream  barcodemap_file_r ("barcode_reads.map");
-        std::list<long>::iterator it;
+        ifstream  barcodemap_file_r (reads_file);
+        std::list<long long>::iterator it;
 
         for (it = barcode_map[barcode].begin(); it != barcode_map[barcode].end(); ++it) {
           barcodemap_file_r.seekg((streampos) *it);
-          //long pos = (long long) *it;
-          //cout << pos << endl;
-          string pair;
-          std::getline(barcodemap_file_r,pair);
-          cout << pair<< endl;
+          for (int i =0; i<=7; i++) {
+            string pair;
+            std::getline(barcodemap_file_r,pair);
+            cout << pair<< endl;
+          }
         }
-
       }
     catch (OptionFailure& e)
     {
