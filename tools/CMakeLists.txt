@@ -29,15 +29,16 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.45.0 COMPONENTS serialization)
 
+find_package(HTSlib REQUIRED)
 
 
 # We create a target for each 
 FOREACH (program ${PROGRAMS})
   set (PROGRAM_SOURCE_DIR ${PROJECT_SOURCE_DIR}/tools/${program}/src)
-  include_directories (${PROGRAM_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
+  include_directories (${PROGRAM_SOURCE_DIR} ${Boost_INCLUDE_DIRS} ${HTSlib_INCLUDE_DIRS})
   file (GLOB_RECURSE  ProjectFiles  ${PROGRAM_SOURCE_DIR}/*.cpp)
   add_executable(${program} ${ProjectFiles})
-  target_link_libraries(${program} ${gatb-core-libraries} ${Boost_LIBRARIES})
+  target_link_libraries(${program} ${gatb-core-libraries} ${Boost_LIBRARIES} ${HTSlib_LIBRARIES})
 ENDFOREACH (program)
 
 ################################################################################
