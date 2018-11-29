@@ -17,37 +17,44 @@ int main (int argc, char* argv[])
 {
 
     static const char* READS = "-reads";
-    static const char* BARCODE = "-barcode";
+    static const char* BARCODE = "-barcodes";
 
     OptionsParser parser ("getReads");
 
     parser.push_back (new OptionOneParam (READS, "file of indexed reads",   true));
-    parser.push_back (new OptionOneParam (BARCODE, "barcode",   true));
+    parser.push_back (new OptionOneParam (BARCODE, "barcodes",   true));
     try
     {
         IProperties* options = parser.parse (argc, argv);
         string reads_file = options->getStr(READS);
-        string barcode = options->getStr(BARCODE);
+        string barcode_file = options->getStr(BARCODE);
 
         std::ifstream barcodemap_index(reads_file + ".idx", std::ios::binary);
-
         std::map<std::string,std::list<long long>>  barcode_map;
         boost::archive::binary_iarchive iarch(barcodemap_index);
         iarch & barcode_map;
 
-        // register the map with boost
-
         ifstream  barcodemap_file_r (reads_file);
-        std::list<long long>::iterator it;
 
-        for (it = barcode_map[barcode].begin(); it != barcode_map[barcode].end(); ++it) {
-          barcodemap_file_r.seekg((streampos) *it);
-          for (int i =0; i<=7; i++) {
-            string pair;
-            std::getline(barcodemap_file_r,pair);
-            cout << pair<< endl;
+         ifstream barcodes (barcode_file);
+         if (barcodes.is_open()){
+            string barcode;
+            while ( getline (barcodes,barcode) )
+            {
+                std::list<long long>::iterator it;
+                for (it = barcode_map[barcode].begin(); it != barcode_map[barcode].end(); ++it) {
+                  barcodemap_file_r.seekg((streampos) *it);
+                  for (int i =0; i<=7; i++) {
+                    string pair;
+                    std::getline(barcodemap_file_r,pair);
+                    cout << pair<< endl;
+                  }
+                }
+            }
+            barcodes.close();
           }
-        }
+
+          else cout << "Unable to open " + barcode_file << endl;
       }
     catch (OptionFailure& e)
     {
