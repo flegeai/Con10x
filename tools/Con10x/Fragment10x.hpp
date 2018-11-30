@@ -23,6 +23,10 @@ Fragment10x::Fragment10x(const Sequence& seq1 , const Sequence& seq2) {
   barcode=seq1.toString().substr(0,BARCODE_SIZE);
   char* data = seq1.getDataBuffer();
   data+=SEQ_START;
+  const char* quality = seq1.getQuality().c_str();
+  quality+=SEQ_START;
   r1=Sequence(data);
+  r1.setComment(seq1.getComment());
+  r1.setQuality(quality);
   r2=seq2;
 }
