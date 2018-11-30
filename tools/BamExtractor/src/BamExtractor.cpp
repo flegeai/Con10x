@@ -5,7 +5,7 @@
 #include "sam.h"
 #include <map>
 #define BARCODE_SIZE 16
-#define BXTAG "ZOB"
+#define BXTAG "BX"
 
 using namespace std;
 bool *fromflagtobits (int);
