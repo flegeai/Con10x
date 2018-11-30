@@ -5,6 +5,7 @@
 #include "sam.h"
 #include <map>
 #define BARCODE_SIZE 16
+#define BXTAG "ZOB"
 
 using namespace std;
 bool *fromflagtobits (int);
@@ -50,26 +51,36 @@ int main(int argc, char* argv[]) {
         //Initiate the alignment record
         bam1_t *aln = bam_init1();
         while(sam_itr_next(in, iter, aln) >= 0) {
-						// printf("qname: %s\n",bam_get_qname(aln));
+						//printf("qname: %s\n",bam_get_qname(aln));
             //cout << "\tPos: " << aln->core.pos;
 						//cout << "\tFlag: " << aln->core.flag;
-						bool * bits = fromflagtobits(aln->core.flag);
+						uint8_t* bxtag = bam_aux_get(aln, BXTAG);
 
-						//cout << "\tBinary: " << endl;
-						//for (int i =0; i<12; i++) {
-						//	cout<< *(bits +i);
-						//}
-						//cout <<endl;
+						if (bxtag != 0) { // The  barcode is in the bam auxiliary tags (LongRanger)
+								string barcode;
+								int i = 1;
 
-						/* Barcode Extraction */
-						/* We need to find the first seq of the fragments (bit 7 == true) */
-						if (*(bits + 6) == true) {
-							string barcode,seq;
-							uint8_t *seqi = bam_get_seq(aln);
-							if (*(bits +4) == false) { // Not reverse complemented
-								  for (int i = 0; i < BARCODE_SIZE; i++) {
-                   barcode += seq_nt16_str[bam_seqi(seqi, i)];
-							    }
+								while (*(bxtag+i) != '\0') {
+										barcode+=*(bxtag+i);
+										i++;
+								}
+								cout<< barcode <<endl;
+								barcode_map[barcode]=true;
+						}
+						else { // the barcode is in the sequence
+
+							bool * bits = fromflagtobits(aln->core.flag);
+
+
+							/* Barcode Extraction */
+							/* We need to find the first seq of the fragments (bit 7 == true) */
+							if (*(bits + 6) == true) {
+								string barcode,seq;
+								uint8_t *seqi = bam_get_seq(aln);
+								if (*(bits +4) == false) { // Not reverse complemented
+								  	for (int i = 0; i < BARCODE_SIZE; i++) {
+                   	barcode += seq_nt16_str[bam_seqi(seqi, i)];
+							    	}
 								}
 								else {
 									  for (int i = aln->core.l_qseq-1; i >= aln->core.l_qseq-BARCODE_SIZE; i--) {
@@ -101,7 +112,7 @@ int main(int argc, char* argv[]) {
 								}
 
 						}
-
+					}
 				map<string, bool>::iterator itr;
 				for (itr = barcode_map.begin(); itr != barcode_map.end(); ++itr) {
         		cout << itr->first << endl;
