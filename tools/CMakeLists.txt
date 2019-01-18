@@ -22,6 +22,10 @@ include_directories (${gatb-core-includes})
 # We add the path for extra libraries
 link_directories (${gatb-core-extra-libraries-path})
 
+# common
+include_directories (common)
+link_directories (common)
+
 # We get the list of subdirectories names
 SUBDIRLIST(PROGRAMS ${PROJECT_SOURCE_DIR}/tools)
 set(Boost_USE_STATIC_LIBS OFF)
@@ -38,7 +42,7 @@ FOREACH (program ${PROGRAMS})
   include_directories (${PROGRAM_SOURCE_DIR} ${Boost_INCLUDE_DIRS} ${HTSlib_INCLUDE_DIRS})
   file (GLOB_RECURSE  ProjectFiles  ${PROGRAM_SOURCE_DIR}/*.cpp)
   add_executable(${program} ${ProjectFiles})
-  target_link_libraries(${program} ${gatb-core-libraries} ${Boost_LIBRARIES} ${HTSlib_LIBRARIES})
+  target_link_libraries(${program} common ${gatb-core-libraries} ${Boost_LIBRARIES} ${HTSlib_LIBRARIES})
 ENDFOREACH (program)
 
 ################################################################################

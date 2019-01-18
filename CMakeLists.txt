@@ -46,6 +46,17 @@ SET (GATB_CORE_INCLUDE_EXAMPLES  0)
 # GATB CORE
 include (GatbCore)
 
+
+
+################################################################################
+# COMMON
+################################################################################
+
+ADD_SUBDIRECTORY(common)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/common/src)
+MESSAGE("LIBRARY OUTPUT PATH : " ${Con10x_BINARY_DIR}/lib)
+SET(LIBRARY_OUTPUT_PATH ${Con10x_BINARY_DIR}/lib)
+
 ################################################################################
 # TOOLS
 ################################################################################
