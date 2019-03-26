@@ -1,30 +1,34 @@
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
-
 #include "hts.h"
 #include "sam.h"
 #include <map>
+#include <list>
+#include "boost/program_options.hpp"
 #define BARCODE_SIZE 16
 #define BXTAG "BX"
 
 using namespace std;
+namespace po = boost::program_options;
+
+// functions declarations
 bool *fromflagtobits (int);
+std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region);
+int common_barcodes(std::list<string> list1, std::list<string> list2 );
 
 int main (int argc, char* argv[])
 {
-	static const char* LIST1 = "-bam";
-	static const char* LIST1 = "-list";
 
-	OptionsParser parser ("getLists");
+	try{
+		string bam;
+		string reg_files;
+		po::options_description desc("Options");
+		desc.add_options()
+    	("list,l",po::value<string>(&reg_files)->required(), "file containing regions")
+    	("bam,b", po::value<string>(&bam)->required(), "bam file")
+			;
 
-	parser.push_back (new OptionOneParam (BAM, "bam alignments file",   false));
-	parser.push_back (new OptionOneParam (LIST, "first list of regions",   false));
-
-	try
-	{
-		IProperties* options = parser.parse (argc, argv);
-
-		string bam = options->getStr(BAM);
 
 		if(!bam.empty()) {
 			//open BAM for reading
@@ -42,18 +46,17 @@ int main (int argc, char* argv[])
 			//Get the header
 			bam_hdr_t *header = sam_hdr_read(in);
 
-			string list = options->getStr(LIST);
-
 			std::map<std::string,std::list<string>> barcodes_map;
 
 			// We extract barcodes from all the regions
 			vector<string> regions;
 
-			ifstream regions (list);
-			if (regions.is_open()){
+			ifstream list_regions (reg_files);
+			if (list_regions.is_open()){
 				string region;
-				while ( getline (regions, region) ){
-					barcodes_map[region]=getBarcodesfromRegion(in,idx,header,region);
+				while ( getline (list_regions, region) ){
+					std::list<string>  l=getBarcodesfromRegion(in,idx,header,region);
+					barcodes_map[region]=l;
 					regions.push_back(region);
 				}
 			}
@@ -62,7 +65,7 @@ int main (int argc, char* argv[])
 
 			for(vector<string>::iterator r1= regions.begin(); r1 != regions.end();++r1){
 				for(vector<string>::iterator r2= regions.begin(); r2 != regions.end();++r2){
-					cout << r1 << " " << r2 << " "<< common_barcodes(barcodes_map[r1],barcodes_map[r2]) << "\n";
+					cout << *r1 << " " << *r2 << " "<< common_barcodes(barcodes_map[*r1],barcodes_map[*r2]) << "\n";
 				}
 			}
 
@@ -81,20 +84,21 @@ int main (int argc, char* argv[])
 }
 
 
-std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, String region) {
+std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region) {
 	//Initialize iterator
 	hts_itr_t *iter = NULL;
+	string region_ = ".";
 	//Move the iterator to the region we are interested in
-	iter  = sam_itr_querys(idx, header, region_.c_str());
+	iter  = sam_itr_querys(index, header, region_.c_str());
 	if(header == NULL || iter == NULL) {
-		sam_close(in);
+		sam_close(samFile);
 		throw runtime_error("Unable to iterate to region within BAM.");
 	}
 
 	std::map<std::string,bool> barcode_map;
 	//Initiate the alignment record
 	bam1_t *aln = bam_init1();
-	while(sam_itr_next(in, iter, aln) >= 0) {
+	while(sam_itr_next(samFile, iter, aln) >= 0) {
 		//printf("qname: %s\n",bam_get_qname(aln));
 		//cout << "\tPos: " << aln->core.pos;
 		//cout << "\tFlag: " << aln->core.flag;
@@ -186,7 +190,7 @@ bool* fromflagtobits(int n)
     return bits;
 }
 
-int common_barcodes(std::list<string> list1, std::list<string> ) {
+int common_barcodes(std::list<string> list1, std::list<string> list ) {
 	int common =0;
 	for (std::list<string>::iterator it1 = list1.begin()); it1 != list1.end(); ++it1) {
 		for (std::list<string>::iterator it2 = list2.begin()); it2 != list2.end(); ++it2) {
