@@ -5,12 +5,14 @@
 #include "sam.h"
 #include <map>
 #include <list>
-#include "boost/program_options.hpp"
+#include <vector>
+#include <getopt.h>
+//#include "boost/program_options.hpp"
 #define BARCODE_SIZE 16
 #define BXTAG "BX"
 
 using namespace std;
-namespace po = boost::program_options;
+//namespace po = boost::program_options;
 
 // functions declarations
 bool *fromflagtobits (int);
@@ -23,12 +25,37 @@ int main (int argc, char* argv[])
 	try{
 		string bam;
 		string reg_files;
-		po::options_description desc("Options");
-		desc.add_options()
-    	("list,l",po::value<string>(&reg_files)->required(), "file containing regions")
-    	("bam,b", po::value<string>(&bam)->required(), "bam file")
-			;
+	//	po::options_description desc("Options");
+	//	desc.add_options()
+    //	("list,l",po::value<string>(&reg_files)->required(), "file containing regions")
+    //	("bam,b", po::value<string>(&bam)->required(), "bam file")
+	//		;
+		const char* const short_opts = "b:l:";
 
+    static struct option long_options[] = {
+        {"bam",      required_argument,       0,  'b' },
+        {"list", required_argument,       0,  'l' },
+        {0,           0,                 0,  0   }
+    };
+
+		while (true) {
+			const auto opt = getopt_long(argc, argv,short_opts, long_options, 0);
+			if (opt == -1) {break;}
+		   switch (opt) {
+             case 'b' :
+						  	bam= std::string(optarg);
+                 break;
+						case 'l' :
+							 reg_files= std::string(optarg);
+								break;
+
+            default:
+							std::cout <<
+            	"--bam <bam>: bam file\n"
+            	"--list <list>: list of regions\n";
+                 exit(EXIT_FAILURE);
+        }
+    }
 
 		if(!bam.empty()) {
 			//open BAM for reading
