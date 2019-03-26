@@ -160,7 +160,7 @@ std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, ba
 			}
 
 		}
-
+	}
 		std::list<string> barcodes;
 
 		map<string, bool>::iterator itr;
@@ -190,11 +190,12 @@ bool* fromflagtobits(int n)
     return bits;
 }
 
-int common_barcodes(std::list<string> list1, std::list<string> list ) {
+int common_barcodes(std::list<string> list1, std::list<string> list2 ) {
 	int common =0;
-	for (std::list<string>::iterator it1 = list1.begin()); it1 != list1.end(); ++it1) {
-		for (std::list<string>::iterator it2 = list2.begin()); it2 != list2.end(); ++it2) {
+	for (std::list<string>::iterator it1 = list1.begin(); it1 != list1.end(); ++it1) {
+		for (std::list<string>::iterator it2 = list2.begin(); it2 != list2.end(); ++it2) {
 			common++;
+		}
 	}
 	return common;
 }
