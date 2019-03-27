@@ -82,6 +82,7 @@ int main (int argc, char* argv[])
 			if (list_regions.is_open()){
 				string region;
 				while ( getline (list_regions, region) ){
+					cerr << Analyzing region << region << "\n";
 					std::list<string>  l=getBarcodesfromRegion(in,idx,header,region);
 					barcodes_map[region]=l;
 					regions.push_back(region);
@@ -89,7 +90,7 @@ int main (int argc, char* argv[])
 			}
 
 			// We generate the matrix
-
+			cerr << "Producing the matrix\n";
 			for(vector<string>::iterator r1= regions.begin(); r1 != regions.end();++r1){
 				for(vector<string>::iterator r2= regions.begin(); r2 != regions.end();++r2){
 					cout << *r1 << " " << *r2 << " "<< common_barcodes(barcodes_map[*r1],barcodes_map[*r2]) << "\n";
