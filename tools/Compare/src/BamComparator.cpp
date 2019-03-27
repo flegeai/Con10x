@@ -82,7 +82,7 @@ int main (int argc, char* argv[])
 			if (list_regions.is_open()){
 				string region;
 				while ( getline (list_regions, region) ){
-					cerr << Analyzing region << region << "\n";
+					cerr << "Analyzing region "<< region << "\n";
 					std::list<string>  l=getBarcodesfromRegion(in,idx,header,region);
 					barcodes_map[region]=l;
 					regions.push_back(region);
