@@ -83,15 +83,21 @@ int main (int argc, char* argv[])
 				string region;
 				while ( getline (list_regions, region) ){
 					cerr << "Analyzing region "<< region << "\n";
-					std::list<string>  l=getBarcodesfromRegion(in,idx,header,region);
+					std::list<string> l=getBarcodesfromRegion(in,idx,header,region);
 					barcodes_map[region]=l;
 					regions.push_back(region);
 				}
 			}
 
+
 			// We generate the matrix
 			cerr << "Producing the matrix\n";
 			for(vector<string>::iterator r1= regions.begin(); r1 != regions.end();++r1){
+			//	cerr << *r1 << "size : " << barcodes_map[*r1].size() << "\n";
+
+				for (std::list<string>::iterator it1 = barcodes_map[*r1].begin(); it1 != barcodes_map[*r1].end(); ++it1) {
+				//	cerr << *it1 << "\n";
+				}
 				for(vector<string>::iterator r2= regions.begin(); r2 != regions.end();++r2){
 					cout << *r1 << " " << *r2 << " "<< common_barcodes(barcodes_map[*r1],barcodes_map[*r2]) << "\n";
 				}
@@ -115,9 +121,8 @@ int main (int argc, char* argv[])
 std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region) {
 	//Initialize iterator
 	hts_itr_t *iter = NULL;
-	string region_ = ".";
 	//Move the iterator to the region we are interested in
-	iter  = sam_itr_querys(index, header, region_.c_str());
+	iter  = sam_itr_querys(index, header, region.c_str());
 	if(header == NULL || iter == NULL) {
 		sam_close(samFile);
 		throw runtime_error("Unable to iterate to region within BAM.");
@@ -188,12 +193,13 @@ std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, ba
 			}
 
 		}
-	}
+  	}
 		std::list<string> barcodes;
 
 		map<string, bool>::iterator itr;
 		for (itr = barcode_map.begin(); itr != barcode_map.end(); ++itr) {
-					barcodes.push_back(itr->first);
+			//	cout <<  region  << " " << itr->first << "\n";
+				barcodes.push_back(itr->first);
 		}
 
 		hts_itr_destroy(iter);
@@ -222,7 +228,12 @@ int common_barcodes(std::list<string> list1, std::list<string> list2 ) {
 	int common =0;
 	for (std::list<string>::iterator it1 = list1.begin(); it1 != list1.end(); ++it1) {
 		for (std::list<string>::iterator it2 = list2.begin(); it2 != list2.end(); ++it2) {
-			common++;
+			if (*it1 == *it2) {
+	//			cout << *it1 << " " << *it2 << "\n";
+				common++;
+				break;
+			}
+
 		}
 	}
 	return common;
