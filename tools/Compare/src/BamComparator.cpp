@@ -139,7 +139,7 @@ std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, ba
 				barcode+=*(bxtag+i);
 				i++;
 			}
-			cout<< barcode <<endl;
+			//cout<< barcode <<endl;
 			barcode_map[barcode]=true;
 		}
 		else { // the barcode is in the sequence
