@@ -16,8 +16,8 @@ using namespace std;
 
 // functions declarations
 bool *fromflagtobits (int);
-std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region);
-int common_barcodes(std::list<string> list1, std::list<string> list2 );
+std::map<string,bool> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region);
+int common_barcodes(std::map<string,bool> list1, std::map<string,bool> list2 );
 
 int main (int argc, char* argv[])
 {
@@ -73,7 +73,7 @@ int main (int argc, char* argv[])
 			//Get the header
 			bam_hdr_t *header = sam_hdr_read(in);
 
-			std::map<std::string,std::list<string>> barcodes_map;
+			std::map<std::string,std::map<string,bool>> barcodes_map;
 
 			// We extract barcodes from all the regions
 			vector<string> regions;
@@ -83,7 +83,8 @@ int main (int argc, char* argv[])
 				string region;
 				while ( getline (list_regions, region) ){
 					cerr << "Analyzing region "<< region << "\n";
-					std::list<string> l=getBarcodesfromRegion(in,idx,header,region);
+					// mettre une map ici
+					std::map<std::string, bool> l=getBarcodesfromRegion(in,idx,header,region);
 					barcodes_map[region]=l;
 					regions.push_back(region);
 				}
@@ -95,10 +96,11 @@ int main (int argc, char* argv[])
 			for(vector<string>::iterator r1= regions.begin(); r1 != regions.end();++r1){
 			//	cerr << *r1 << "size : " << barcodes_map[*r1].size() << "\n";
 
-				for (std::list<string>::iterator it1 = barcodes_map[*r1].begin(); it1 != barcodes_map[*r1].end(); ++it1) {
+		//		for (std::list<string>::iterator it1 = barcodes_map[*r1].begin(); it1 != barcodes_map[*r1].end(); ++it1) {
 				//	cerr << *it1 << "\n";
-				}
-				for(vector<string>::iterator r2= regions.begin(); r2 != regions.end();++r2){
+			//	}
+			//	for(vector<string>::iterator r2= regions.begin(); r2 != regions.end();++r2){
+			for(vector<string>::iterator r2= r1; r2 != regions.end();++r2){
 					cout << *r1 << " " << *r2 << " "<< common_barcodes(barcodes_map[*r1],barcodes_map[*r2]) << "\n";
 				}
 			}
@@ -118,7 +120,7 @@ int main (int argc, char* argv[])
 }
 
 
-std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region) {
+std::map<string,bool> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, bam_hdr_t *header, string region) {
 	//Initialize iterator
 	hts_itr_t *iter = NULL;
 	//Move the iterator to the region we are interested in
@@ -194,17 +196,17 @@ std::list<string> getBarcodesfromRegion(samFile *samFile,  hts_idx_t  *index, ba
 
 		}
   	}
-		std::list<string> barcodes;
-
-		map<string, bool>::iterator itr;
-		for (itr = barcode_map.begin(); itr != barcode_map.end(); ++itr) {
-			//	cout <<  region  << " " << itr->first << "\n";
-				barcodes.push_back(itr->first);
-		}
-
+	// //	std::map<string,bool> barcodes;
+	//
+	// 	map<string, bool>::iterator itr;
+	// 	for (itr = barcode_map.begin(); itr != barcode_map.end(); ++itr) {
+	// 		//	cout <<  region  << " " << itr->first << "\n";
+	// 			barcodes.push_back(itr->first);
+	// 	}
+	//
 		hts_itr_destroy(iter);
 		bam_destroy1(aln);
-		return barcodes;
+		return barcode_map;
 }
 
 
@@ -224,17 +226,15 @@ bool* fromflagtobits(int n)
     return bits;
 }
 
-int common_barcodes(std::list<string> list1, std::list<string> list2 ) {
+int common_barcodes(std::map<string,bool> list1, std::map<string,bool> list2 ) {
 	int common =0;
-	for (std::list<string>::iterator it1 = list1.begin(); it1 != list1.end(); ++it1) {
-		for (std::list<string>::iterator it2 = list2.begin(); it2 != list2.end(); ++it2) {
-			if (*it1 == *it2) {
-	//			cout << *it1 << " " << *it2 << "\n";
-				common++;
-				break;
-			}
+	 for ( const auto &myPair : list1 ) {
+		 common+=list2.count(myPair.first);
+    //    std::cout << myPair.first << "\n";
+    }
 
-		}
-	}
+	// for (std::map<string,bool>::iterator it1 = list1.begin(); it1 != list1.end(); ++it1) {
+	//
+	// }
 	return common;
 }
