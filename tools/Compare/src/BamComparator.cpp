@@ -24,22 +24,23 @@ int main (int argc, char* argv[])
 
 	try{
 		string bam;
-		string reg_files;
-	//	po::options_description desc("Options");
-	//	desc.add_options()
-    //	("list,l",po::value<string>(&reg_files)->required(), "file containing regions")
-    //	("bam,b", po::value<string>(&bam)->required(), "bam file")
-	//		;
-		const char* const short_opts = "b:l:";
+		string reg_files = "";
+		string input = "";
+		int size;
+
+
+		const char* const short_opts = "b:l:i:s:";
 
     static struct option long_options[] = {
-        {"bam",      required_argument,       0,  'b' },
-        {"list", required_argument,       0,  'l' },
-        {0,           0,                 0,  0   }
+        {"bam",      required_argument,       nullptr,  'b' },
+        {"list", optional_argument,       nullptr,  'l' },
+				{"in", optional_argument, nullptr , 'i' },
+				{"size", optional_argument, nullptr , 's' },
+        {nullptr,no_argument,nullptr,  0   }
     };
 
 		while (true) {
-			const auto opt = getopt_long(argc, argv,short_opts, long_options, 0);
+			const auto opt = getopt_long(argc, argv,short_opts, long_options, nullptr);
 			if (opt == -1) {break;}
 		   switch (opt) {
              case 'b' :
@@ -48,11 +49,20 @@ int main (int argc, char* argv[])
 						case 'l' :
 							 reg_files= std::string(optarg);
 								break;
+						case 'i' :
+								input=std::string(optarg);
+								break;
+						case 's' :
+								size=	std::stoi(optarg);
+								cout << "Num set to: " << size << std::endl;
+								break;
 
             default:
 							std::cout <<
             	"--bam <bam>: bam file\n"
-            	"--list <list>: list of regions\n";
+            	"--list <list>: list of regions (optional)\n"
+							"--in : <string> name of a sequence \n"
+							"--size <int> size of boundaries\n ";
                  exit(EXIT_FAILURE);
         }
     }
@@ -78,41 +88,41 @@ int main (int argc, char* argv[])
 			// We extract barcodes from all the regions
 			vector<string> regions;
 
-			ifstream list_regions (reg_files);
-			if (list_regions.is_open()){
-				string region;
-				while ( getline (list_regions, region) ){
-					cerr << "Analyzing region "<< region << "\n";
-					// mettre une map ici
-					std::map<std::string, bool> l=getBarcodesfromRegion(in,idx,header,region);
-					barcodes_map[region]=l;
-					regions.push_back(region);
+			if (reg_files.compare("") != 0) {
+				ifstream list_regions (reg_files);
+				if (list_regions.is_open()){
+					string region;
+					while ( getline (list_regions, region) ){
+						cerr << "Analyzing region "<< region << "\n";
+						// mettre une map ici
+						std::map<std::string, bool> l=getBarcodesfromRegion(in,idx,header,region);
+						barcodes_map[region]=l;
+						regions.push_back(region);
+					}
+				}
+
+				// We generate the matrix
+				cerr << "Producing the matrix\n";
+				for(vector<string>::iterator r1= regions.begin(); r1 != regions.end();++r1){
+					for(vector<string>::iterator r2= r1; r2 != regions.end();++r2){
+						cout << *r1 << " " << *r2 << " "<< common_barcodes(barcodes_map[*r1],barcodes_map[*r2]) << "\n";
+					}
 				}
 			}
 
-
-			// We generate the matrix
-			cerr << "Producing the matrix\n";
-			for(vector<string>::iterator r1= regions.begin(); r1 != regions.end();++r1){
-			//	cerr << *r1 << "size : " << barcodes_map[*r1].size() << "\n";
-
-		//		for (std::list<string>::iterator it1 = barcodes_map[*r1].begin(); it1 != barcodes_map[*r1].end(); ++it1) {
-				//	cerr << *it1 << "\n";
-			//	}
-			//	for(vector<string>::iterator r2= regions.begin(); r2 != regions.end();++r2){
-			for(vector<string>::iterator r2= r1; r2 != regions.end();++r2){
-					cout << *r1 << " " << *r2 << " "<< common_barcodes(barcodes_map[*r1],barcodes_map[*r2]) << "\n";
+			else {
+				if (input.compare("") != 0) {
+					cout << "Nous y sommes dans les cimes\n";
 				}
 			}
-
 			hts_idx_destroy(idx);
 			bam_hdr_destroy(header);
 			sam_close(in);
+				// Generation de	 la matrice
 
-			// Generation de la matrice
+				return 0;
+			}
 
-			return 0;
-		}
 
 	} catch (const runtime_error& e) {
 		cerr << e.what();
