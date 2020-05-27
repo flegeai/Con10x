@@ -7,6 +7,7 @@
 #include <list>
 #include <vector>
 #include <getopt.h>
+#include <string.h>
 //#include "boost/program_options.hpp"
 #define BARCODE_SIZE 16
 #define BXTAG "BX"
@@ -26,8 +27,7 @@ int main (int argc, char* argv[])
 		string bam;
 		string reg_files = "";
 		string input = "";
-		int size;
-
+		u_int size=1000;
 
 		const char* const short_opts = "b:l:i:s:";
 
@@ -54,7 +54,7 @@ int main (int argc, char* argv[])
 								break;
 						case 's' :
 								size=	std::stoi(optarg);
-								cout << "Num set to: " << size << std::endl;
+								cerr << "Size set to: " << size << std::endl;
 								break;
 
             default:
@@ -111,8 +111,62 @@ int main (int argc, char* argv[])
 			}
 
 			else {
+
 				if (input.compare("") != 0) {
-					cout << "Nous y sommes dans les cimes\n";
+
+					std::map<std::string,std::map<string,bool>> barcodes_map;
+					vector<string> regions;
+
+					std::map<string,u_int> seq_length;
+					// get the size of the segments
+					for (int i = 0; i < header->n_targets; i++) {
+						string region=header->target_name[i];
+						if (header->target_len[i] < size) {
+							string end = to_string(header->target_len[i]);
+							region += ":0-" + end;
+							//cout << region << "\n";
+							std::map<std::string, bool> l=getBarcodesfromRegion(in,idx,header,region);
+							barcodes_map[region]=l;
+							regions.push_back(region);
+						}
+						else {
+							// left
+							string region_l = region + ":0-" + to_string(size);
+							//cout << "left " << region_l << "\n";
+							std::map<std::string, bool> l=getBarcodesfromRegion(in,idx,header,region_l);
+							barcodes_map[region_l]=l;
+							regions.push_back(region_l);
+							// right
+							u_int b_end = header->target_len[i]-size;
+							string region_r = region + ":" + to_string(b_end) + "-" + to_string(header->target_len[i]);
+							//cout << "right " << region_r << "\n";
+						 	l=getBarcodesfromRegion(in,idx,header,region_r);
+							barcodes_map[region_r]=l;
+							regions.push_back(region_r);
+						}
+						seq_length[header->target_name[i]]=header->target_len[i];
+					}
+
+					string input_region = input;
+					if (seq_length[input] < size) {
+						input_region += ":0-" + to_string(seq_length[input]);
+						for(vector<string>::iterator r= regions.begin(); r != regions.end();++r){
+								cout << input_region << " " << *r << " "<< common_barcodes(barcodes_map[input_region],barcodes_map[*r]) << "\n";
+						}
+					}
+					else {
+							// left
+							string input_region_l = input_region + ":0-" + to_string(size);
+							for(vector<string>::iterator r= regions.begin(); r != regions.end();++r){
+									cout << input_region_l << " " << *r << " "<< common_barcodes(barcodes_map[input_region_l],barcodes_map[*r]) << "\n";
+							}
+							// right
+							u_int b_end = seq_length[input]-size;
+							string input_region_r = input_region + ":" + to_string(b_end) + "-" + to_string(seq_length[input]);
+							for(vector<string>::iterator r= regions.begin(); r != regions.end();++r){
+									cout << input_region_r << " " << *r << " "<< common_barcodes(barcodes_map[input_region_r],barcodes_map[*r]) << "\n";
+							}
+					}
 				}
 			}
 			hts_idx_destroy(idx);
