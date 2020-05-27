@@ -151,20 +151,29 @@ int main (int argc, char* argv[])
 					if (seq_length[input] < size) {
 						input_region += ":0-" + to_string(seq_length[input]);
 						for(vector<string>::iterator r= regions.begin(); r != regions.end();++r){
-								cout << input_region << " " << *r << " "<< common_barcodes(barcodes_map[input_region],barcodes_map[*r]) << "\n";
+								int cb = common_barcodes(barcodes_map[input_region],barcodes_map[*r]);
+								if (cb  > 0) {
+									cout << input_region << " " << *r << " "<<  cb << "\n";
+								}
 						}
 					}
 					else {
 							// left
 							string input_region_l = input_region + ":0-" + to_string(size);
 							for(vector<string>::iterator r= regions.begin(); r != regions.end();++r){
-									cout << input_region_l << " " << *r << " "<< common_barcodes(barcodes_map[input_region_l],barcodes_map[*r]) << "\n";
+									int cb = common_barcodes(barcodes_map[input_region_l],barcodes_map[*r]);
+									if (cb > 0 ) {
+										cout << input_region_l << " " << *r << " "<< cb << "\n";
+									}
 							}
 							// right
 							u_int b_end = seq_length[input]-size;
 							string input_region_r = input_region + ":" + to_string(b_end) + "-" + to_string(seq_length[input]);
 							for(vector<string>::iterator r= regions.begin(); r != regions.end();++r){
-									cout << input_region_r << " " << *r << " "<< common_barcodes(barcodes_map[input_region_r],barcodes_map[*r]) << "\n";
+									int cb = common_barcodes(barcodes_map[input_region_r],barcodes_map[*r]);
+									if (cb > 0) {
+										cout << input_region_r << " " << *r << " "<< cb << "\n";
+									}
 							}
 					}
 				}
